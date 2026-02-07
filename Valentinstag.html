@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Mein Valentine? 💘</title>
+
+<style>
+body {
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+  font-family: Arial, sans-serif;
+  color: white;
+  overflow: hidden;
+}
+
+.box {
+  background: rgba(255,255,255,0.2);
+  padding: 40px;
+  border-radius: 25px;
+  text-align: center;
+  max-width: 500px;
+}
+
+.buttons {
+  display:flex;
+  gap:40px;
+  justify-content:center;
+  margin-top:30px;
+}
+
+button {
+  border:none;
+  padding:15px 30px;
+  border-radius:30px;
+  font-size:1em;
+  cursor:pointer;
+  transition: transform 0.3s ease;
+}
+
+#yes { background:white; color:#ff6f91; }
+#no  { background: rgba(255,255,255,0.8); color:#ff6f91; }
+
+/* Overlay */
+#overlay {
+  position: fixed;
+  inset:0;
+  background:black;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  z-index:10;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity 1s ease;
+}
+#overlay.active {
+  opacity:1;
+  pointer-events:all;
+}
+
+#overlayText {
+  font-size:2em;
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+}
+
+#overlay video {
+  width:100vw;
+  height:100vh;
+  object-fit:cover;
+  opacity:0;
+  transition:opacity 1s ease;
+}
+
+/* Popup */
+#popupImage {
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  max-width:80%;
+  max-height:80%;
+  display:none;
+  z-index:20;
+  border-radius:20px;
+  box-shadow:0 0 30px rgba(0,0,0,0.8);
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h1>Willst du mein Valentine sein? 💖</h1>
+  <div class="buttons">
+    <button id="yes" onclick="yesClicked()">Ja</button>
+    <button id="no" onclick="noClicked()">Nein</button>
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="overlayText">Du wolltest es also wirklich so...</div>
+  <video id="valentineVideo" src="valentineVideo.mp4"></video>
+</div>
+
+<img id="popupImage" src="valentineImage.jpg">
+
+<!-- Audio -->
+<audio id="backgroundMusic" src="backgroundMusic.mp3" loop></audio>
+<audio id="yesMusic" src="yesMusic.mp3" loop></audio>
+
+<script>
+let noClicks = 0;
+const maxClicks = 5;
+let yesUnlocked = false;
+let musicStarted = false;
+
+const noTexts = [
+  "Nein",
+  "Bist du sicher?",
+  "Schau uns an willst du das wirklich nicht?",
+  "Ich würde aufpassen!",
+  "So... Jetzt reichts mir..."
+];
+
+const bgMusic = document.getElementById("backgroundMusic");
+const yesMusic = document.getElementById("yesMusic");
+
+bgMusic.volume = 0.3;
+yesMusic.volume = 0.5;
+
+/* Musik */
+function startBgMusic(){
+  if(!musicStarted){
+    bgMusic.play().catch(()=>{});
+    musicStarted = true;
+  }
+}
+
+function fadeOutBgMusic(){
+  let v = bgMusic.volume;
+  const fade = setInterval(()=>{
+    v -= 0.03;
+    bgMusic.volume = Math.max(0,v);
+    if(v<=0){
+      clearInterval(fade);
+      bgMusic.pause();
+      bgMusic.volume = 0.3;
+    }
+  },50);
+}
+
+function fadeInBgMusic(){
+  bgMusic.volume = 0;
+  bgMusic.play().catch(()=>{});
+  let v = 0;
+  const fade = setInterval(()=>{
+    v += 0.03;
+    bgMusic.volume = Math.min(0.3,v);
+    if(v>=0.3) clearInterval(fade);
+  },50);
+}
+
+/* YES CLICK — FIX HIER */
+function yesClicked(){
+  startBgMusic();
+  if(!yesUnlocked) return;
+
+  // 🔥 WICHTIG: Musik VOR innerHTML starten
+  bgMusic.pause();
+  bgMusic.currentTime = 0;
+
+  yesMusic.currentTime = 0;
+  yesMusic.play().catch(err => console.log("YesMusic Fehler:", err));
+
+  document.body.innerHTML = `
+    <div style="
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      background:linear-gradient(135deg,#ff9a9e,#fad0c4);
+      text-align:center;
+      padding:20px;
+    ">
+      <video src="yesVideo.mp4"
+        autoplay
+        controls
+        playsinline
+        style="max-width:90%; max-height:70vh; border-radius:20px; box-shadow:0 0 30px rgba(0,0,0,0.6);">
+      </video>
+
+      <h1 style="margin-top:30px;">YIPPIEEEEE!!!</h1>
+      <p>Du bist mein Valentine ❤️</p>
+      <p>Ich freue mich soooooo sehr auf unseren gemeinsamen Tag! 💐</p>
+    </div>
+  `;
+}
+
+/* NO */
+function noClicked(){
+  startBgMusic();
+  if(noClicks>=maxClicks) return;
+
+  noClicks++;
+  const no = document.getElementById("no");
+  no.textContent = noTexts[noClicks];
+  no.style.transform = `scale(${1+noClicks*0.15})`;
+
+  if(noClicks === 2){
+    const img = document.getElementById("popupImage");
+    img.style.display="block";
+    setTimeout(()=>img.style.display="none",2000);
+  }
+
+  if(noClicks === maxClicks) startOverlay();
+}
+
+/* Overlay */
+function startOverlay(){
+  const overlay = document.getElementById("overlay");
+  const text = document.getElementById("overlayText");
+  const video = document.getElementById("valentineVideo");
+
+  overlay.classList.add("active");
+
+  setTimeout(()=>{
+    text.style.opacity=0;
+    setTimeout(()=>{
+      text.style.display="none";
+      video.style.opacity=1;
+      fadeOutBgMusic();
+      video.play();
+
+      video.onended = ()=>{
+        video.style.opacity=0;
+        text.textContent = "So und jetzt nochmal...";
+        text.style.display="block";
+        text.style.opacity=1;
+        fadeInBgMusic();
+
+        setTimeout(()=>{
+          overlay.style.display="none";
+          yesUnlocked = true;
+          document.getElementById("no").style.display="none";
+        },3000);
+      };
+    },1000);
+  },2000);
+}
+</script>
+
+</body>
+</html>
